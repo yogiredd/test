@@ -2,49 +2,43 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "yogiredd/myapp"
-        IMAGE_TAG = "4"
+        IMAGE_NAME = "redhataccount/myapp"
+        IMAGE_TAG = "5"
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                checkout scm
+                echo 'Git checkout successful'
             }
         }
 
         stage('Build') {
             steps {
-                sh 'podman build -t ${IMAGE}:${BUILD_NUMBER} .'
+                sh '''
+                    echo "Building ${IMAGE_NAME}:${IMAGE_TAG}"
+                    podman build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                '''
             }
         }
 
         stage('Test') {
             steps {
-                sh 'podman images ${IMAGE}'
+                sh '''
+                    echo "Testing image"
+                    podman images
+                '''
             }
         }
 
         stage('Push') {
             steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub-creds',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )
-                ]) {
-                    sh '''
-                        podman login docker.io \
-                          -u "$DOCKER_USER" \
-                          -p "$DOCKER_PASS"
-
-                        podman push \
-                          ${IMAGE}:${BUILD_NUMBER}
-                    '''
-                }
+                echo 'Push stage will be configured next'
             }
         }
     }
 }
+
+       
+                
