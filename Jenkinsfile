@@ -2,7 +2,8 @@ pipeline {
     agent any
 
     environment {
-        IMAGE = "YOUR_DOCKERHUB_USERNAME/myapp"
+        IMAGE_NAME = "yogiredd/myapp"
+        IMAGE_TAG = "4"
     }
 
     stages {
