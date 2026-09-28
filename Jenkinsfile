@@ -1,63 +1,68 @@
 pipeline {
+
     agent any
 
     environment {
-        IMAGE_NAME = "redhataccount/myapp"
-        IMAGE_TAG = "5"
+        IMAGE = "redhataccount/mynginx:${BUILD_NUMBER}"
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                echo 'Git checkout successful'
+                checkout scm
             }
         }
 
-        stage('Build') {
+        stage('Build Image') {
             steps {
                 sh '''
-                    echo "Building ${IMAGE_NAME}:${IMAGE_TAG}"
-                    podman build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                    podman build -t $IMAGE .
                 '''
             }
         }
 
-        stage('Test') {
-            steps {
-                sh '''
-                    echo "Testing image"
-                    podman images
-                '''
-            }
-        }
-
-        stage('Push') {
+        stage('Push Image') {
             steps {
                 withCredentials([
                     usernamePassword(
                         credentialsId: 'dockerhub-creds',
-                        usernameVariable: 'DOCKERHUB_USER',
-                        passwordVariable: 'DOCKERHUB_TOKEN'
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
                     )
                 ]) {
                     sh '''
-                        echo "$DOCKERHUB_TOKEN" | podman login docker.io \
-                            --username "$DOCKERHUB_USER" \
-                            --password-stdin
+                        echo "$DOCKER_PASS" | podman login docker.io \
+                          -u "$DOCKER_USER" \
+                          --password-stdin
 
-                        podman tag ${IMAGE_NAME}:${IMAGE_TAG} \
-                            docker.io/${IMAGE_NAME}:${IMAGE_TAG}
-
-                        podman push docker.io/${IMAGE_NAME}:${IMAGE_TAG}
+                        podman push $IMAGE
 
                         podman logout docker.io
                     '''
                 }
             }
         }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                withCredentials([
+                    file(
+                        credentialsId: 'kubeconfig',
+                        variable: 'KUBECONFIG'
+                    )
+                ]) {
+                    sh '''
+                        kubectl set image deployment/myapp \
+                          myapp=$IMAGE
+
+                        kubectl rollout status deployment/myapp
+
+                        kubectl get pods
+                        kubectl get svc
+                    '''
+                }
+            }
+        }
     }
 }
-        
-          
-                
