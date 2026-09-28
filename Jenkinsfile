@@ -34,11 +34,30 @@ pipeline {
 
         stage('Push') {
             steps {
-                echo 'Push stage will be configured next'
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKERHUB_USER',
+                        passwordVariable: 'DOCKERHUB_TOKEN'
+                    )
+                ]) {
+                    sh '''
+                        echo "$DOCKERHUB_TOKEN" | podman login docker.io \
+                            --username "$DOCKERHUB_USER" \
+                            --password-stdin
+
+                        podman tag ${IMAGE_NAME}:${IMAGE_TAG} \
+                            docker.io/${IMAGE_NAME}:${IMAGE_TAG}
+
+                        podman push docker.io/${IMAGE_NAME}:${IMAGE_TAG}
+
+                        podman logout docker.io
+                    '''
+                }
             }
         }
     }
 }
-
-       
+        
+          
                 
