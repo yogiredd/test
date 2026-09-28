@@ -53,16 +53,30 @@ pipeline {
                     )
                 ]) {
                     sh '''
-                        kubectl set image deployment/myapp \
+                        /usr/local/bin/kubectl \
+                          --kubeconfig="$KUBECONFIG" \
+                          get nodes
+
+                        /usr/local/bin/kubectl \
+                          --kubeconfig="$KUBECONFIG" \
+                          set image deployment/myapp \
                           myapp=$IMAGE
 
-                        kubectl rollout status deployment/myapp
+                        /usr/local/bin/kubectl \
+                          --kubeconfig="$KUBECONFIG" \
+                          rollout status deployment/myapp
 
-                        kubectl get pods
-                        kubectl get svc
+                        /usr/local/bin/kubectl \
+                          --kubeconfig="$KUBECONFIG" \
+                          get pods
+
+                        /usr/local/bin/kubectl \
+                          --kubeconfig="$KUBECONFIG" \
+                          get svc
                     '''
                 }
             }
         }
     }
 }
+
