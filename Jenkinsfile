@@ -44,39 +44,6 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes') {
-            steps {
-                withCredentials([
-                    file(
-                        credentialsId: 'kubeconfig',
-                        variable: 'KUBECONFIG'
-                    )
-                ]) {
-                    sh '''
-                        /usr/local/bin/kubectl \
-                          --kubeconfig="$KUBECONFIG" \
-                          get nodes
-
-                        /usr/local/bin/kubectl \
-                          --kubeconfig="$KUBECONFIG" \
-                          set image deployment/myapp \
-                          myapp=$IMAGE
-
-                        /usr/local/bin/kubectl \
-                          --kubeconfig="$KUBECONFIG" \
-                          rollout status deployment/myapp
-
-                        /usr/local/bin/kubectl \
-                          --kubeconfig="$KUBECONFIG" \
-                          get pods
-
-                        /usr/local/bin/kubectl \
-                          --kubeconfig="$KUBECONFIG" \
-                          get svc
-                    '''
-                }
-            }
-        }
-    }
-}
-
+        
+                          
+  
