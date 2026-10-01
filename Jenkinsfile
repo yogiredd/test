@@ -1,13 +1,13 @@
-
+```groovy
 pipeline {
 
     agent any
 
     environment {
         DOCKER_IMAGE = 'redhataccount/mynginx'
-        KUBECTL       = '/usr/local/bin/kubectl'
-        DEPLOYMENT    = 'myapp'
-        CONTAINER     = 'myapp'
+        KUBECTL      = '/usr/local/bin/kubectl'
+        DEPLOYMENT   = 'myapp'
+        CONTAINER    = 'myapp'
     }
 
     stages {
@@ -22,19 +22,17 @@ pipeline {
 
         stage('Build Image') {
             steps {
-                echo "Building Docker image: ${DOCKER_IMAGE}:${BUILD_NUMBER}"
+                echo "Building image: ${DOCKER_IMAGE}:${BUILD_NUMBER}"
 
                 sh '''
-                    podman build \
-                        -t ${DOCKER_IMAGE}:${BUILD_NUMBER} \
-                        .
+                    podman build -t ${DOCKER_IMAGE}:${BUILD_NUMBER} .
                 '''
             }
         }
 
         stage('Push Image') {
             steps {
-                echo "Pushing image to Docker Hub..."
+                echo 'Pushing image to Docker Hub...'
 
                 withCredentials([
                     usernamePassword(
@@ -49,8 +47,7 @@ pipeline {
                             --username "$DOCKER_USERNAME" \
                             --password-stdin
 
-                        podman push \
-                            ${DOCKER_IMAGE}:${BUILD_NUMBER}
+                        podman push ${DOCKER_IMAGE}:${BUILD_NUMBER}
 
                         podman logout docker.io
                     '''
@@ -60,8 +57,7 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-
-                echo "Deploying ${DOCKER_IMAGE}:${BUILD_NUMBER} to Kubernetes..."
+                echo 'Deploying application to Kubernetes...'
 
                 withCredentials([
                     file(
@@ -71,11 +67,9 @@ pipeline {
                 ]) {
 
                     sh '''
-                        echo "Checking Kubernetes cluster..."
+                        echo "Checking Kubernetes connection..."
 
-                        ${KUBECTL} \
-                            --kubeconfig="$KUBECONFIG" \
-                            get nodes
+                        ${KUBECTL} --kubeconfig="$KUBECONFIG" get nodes
 
                         echo "Updating deployment image..."
 
@@ -84,21 +78,20 @@ pipeline {
                             set image deployment/${DEPLOYMENT} \
                             ${CONTAINER}=${DOCKER_IMAGE}:${BUILD_NUMBER}
 
-                        echo "Waiting for deployment rollout..."
+                        echo "Waiting for rollout..."
 
                         ${KUBECTL} \
                             --kubeconfig="$KUBECONFIG" \
                             rollout status deployment/${DEPLOYMENT} \
                             --timeout=5m
-                    }
+                    '''
                 }
             }
         }
 
         stage('Verify Deployment') {
             steps {
-
-                echo 'Verifying Kubernetes deployment...'
+                echo 'Verifying deployment...'
 
                 withCredentials([
                     file(
@@ -108,20 +101,14 @@ pipeline {
                 ]) {
 
                     sh '''
-                        echo "Deployment:"
-                        ${KUBECTL} \
-                            --kubeconfig="$KUBECONFIG" \
-                            get deployment ${DEPLOYMENT}
+                        echo "Deployment status:"
+                        ${KUBECTL} --kubeconfig="$KUBECONFIG" get deployment ${DEPLOYMENT}
 
-                        echo "Pods:"
-                        ${KUBECTL} \
-                            --kubeconfig="$KUBECONFIG" \
-                            get pods -o wide
+                        echo "Pod status:"
+                        ${KUBECTL} --kubeconfig="$KUBECONFIG" get pods -o wide
 
-                        echo "Service:"
-                        ${KUBECTL} \
-                            --kubeconfig="$KUBECONFIG" \
-                            get svc
+                        echo "Service status:"
+                        ${KUBECTL} --kubeconfig="$KUBECONFIG" get svc
                     '''
                 }
             }
@@ -131,24 +118,20 @@ pipeline {
     post {
 
         success {
-            echo """
-            ==========================================
-                  CI/CD PIPELINE SUCCESSFUL
-            ==========================================
-            Image      : ${DOCKER_IMAGE}:${BUILD_NUMBER}
-            Deployment : ${DEPLOYMENT}
-            ==========================================
-            """
+            echo "========================================"
+            echo "       CI/CD PIPELINE SUCCESSFUL"
+            echo "========================================"
+            echo "Image: ${DOCKER_IMAGE}:${BUILD_NUMBER}"
+            echo "Deployment: ${DEPLOYMENT}"
+            echo "========================================"
         }
 
         failure {
-            echo """
-            ==========================================
-                  CI/CD PIPELINE FAILED
-            ==========================================
-            Check the failed stage and console log.
-            ==========================================
-            """
+            echo "========================================"
+            echo "         CI/CD PIPELINE FAILED"
+            echo "========================================"
+            echo "Please check the failed stage above."
+            echo "========================================"
         }
 
         always {
@@ -156,4 +139,4 @@ pipeline {
         }
     }
 }
-
+```
