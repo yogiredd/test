@@ -1,1 +1,21 @@
-pipeline { agent any environment { IMAGE = "redhataccount/mynginx:${BUILD_NUMBER}" } stages { stage('Checkout') { steps { checkout scm } } stage('Build Image') { steps { sh ''' echo "Building image: $IMAGE" podman build -t $IMAGE . ''' } } stage('Push Image') { steps { withCredentials([ usernamePassword( credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS' ) ]) { sh ''' echo "$DOCKER_PASS" | podman login docker.io \ -u "$DOCKER_USER" \ --password-stdin podman push $IMAGE podman logout docker.io ''' } } } stage('Deploy to Kubernetes') { steps { withCredentials([ file( credentialsId: 'kubeconfig', variable: 'KUBECONFIG' ) ]) { sh ''' echo "Checking Kubernetes connection..." /usr/local/bin/kubectl \ --kubeconfig="$KUBECONFIG" \ get nodes echo "Updating deployment image..." /usr/local/bin/kubectl \ --kubeconfig="$KUBECONFIG" \ set image deployment/myapp \ myapp=$IMAGE echo "Waiting for rollout..." /usr/local/bin/kubectl \ --kubeconfig="$KUBECONFIG" \ rollout status deployment/myapp \ --timeout=5m echo "Deployment status..." /usr/local/bin/kubectl \ --kubeconfig="$KUBECONFIG" \ get deployment myapp echo "Pod status..." /usr/local/bin/kubectl \ --kubeconfig="$KUBECONFIG" \ get pods -o wide echo "Service status..." /usr/local/bin/kubectl \ --kubeconfig="$KUBECONFIG" \ get svc ''' } } } } post { success { echo "======================================" echo "CI/CD PIPELINE SUCCESSFUL" echo "Image: ${IMAGE}" echo "======================================" } failure { echo "======================================" echo "CI/CD PIPELINE FAILED" echo "Check the failed stage above." echo "======================================" } } }
+pipeline {
+    agent any
+
+    stages {
+        stage('Build') {
+            steps {
+                echo 'Building..'
+            }
+        }
+        stage('Test') {
+            steps {
+                echo 'Testing..'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                echo 'Deploying....'
+            }
+        }
+    }
+}
