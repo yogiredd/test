@@ -2,6 +2,10 @@ pipeline {
 
     agent any
 
+     triggers {
+        pollSCM('H/2 * * * *')
+    }
+
     environment {
         DOCKER_IMAGE = 'redhataccount/mynginx'
         KUBECTL      = '/usr/local/bin/kubectl'
