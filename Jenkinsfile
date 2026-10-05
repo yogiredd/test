@@ -29,36 +29,38 @@ pipeline {
 
                 sh '''
                     podman build -t ${DOCKER_IMAGE}:${BUILD_NUMBER} .
+                '''
             }
         }
 
         stage('Trivy Security Scan') {
-    steps {
-        echo '========================================'
-        echo 'Running Trivy Security Scan'
-        echo '========================================'
+            steps {
+                echo '========================================'
+                echo 'Running Trivy Security Scan'
+                echo '========================================'
 
-        sh 
-            IMAGE_TAR="/tmp/mynginx-${BUILD_NUMBER}.tar"
+                sh '''
+                    IMAGE_TAR="/tmp/mynginx-${BUILD_NUMBER}.tar"
 
-            echo "Saving Podman image..."
+                    echo "Saving Podman image..."
 
-            podman save \
-                ${DOCKER_IMAGE}:${BUILD_NUMBER} \
-                -o "$IMAGE_TAR"
+                    podman save \
+                        ${DOCKER_IMAGE}:${BUILD_NUMBER} \
+                        -o "$IMAGE_TAR"
 
-            echo "Scanning image with Trivy..."
+                    echo "Scanning image with Trivy..."
 
-            trivy image \
-                --input "$IMAGE_TAR" \
-                --severity HIGH,CRITICAL \
-                --exit-code 0
+                    trivy image \
+                        --input "$IMAGE_TAR" \
+                        --severity HIGH,CRITICAL \
+                        --exit-code 0
 
-            echo "Removing temporary image archive..."
+                    echo "Removing temporary image archive..."
 
-            rm -f "$IMAGE_TAR"
-        
-    }
+                    rm -f "$IMAGE_TAR"
+                '''
+            }
+        }
 
         stage('Push Image') {
             steps {
@@ -99,7 +101,9 @@ pipeline {
                     sh '''
                         echo "Checking Kubernetes connection..."
 
-                        ${KUBECTL} --kubeconfig="$KUBECONFIG" get nodes
+                        ${KUBECTL} \
+                            --kubeconfig="$KUBECONFIG" \
+                            get nodes
 
                         echo "Updating deployment image..."
 
@@ -132,13 +136,22 @@ pipeline {
 
                     sh '''
                         echo "Deployment status:"
-                        ${KUBECTL} --kubeconfig="$KUBECONFIG" get deployment ${DEPLOYMENT}
+
+                        ${KUBECTL} \
+                            --kubeconfig="$KUBECONFIG" \
+                            get deployment ${DEPLOYMENT}
 
                         echo "Pod status:"
-                        ${KUBECTL} --kubeconfig="$KUBECONFIG" get pods -o wide
+
+                        ${KUBECTL} \
+                            --kubeconfig="$KUBECONFIG" \
+                            get pods -o wide
 
                         echo "Service status:"
-                        ${KUBECTL} --kubeconfig="$KUBECONFIG" get svc
+
+                        ${KUBECTL} \
+                            --kubeconfig="$KUBECONFIG" \
+                            get svc
                     '''
                 }
             }
@@ -170,4 +183,4 @@ pipeline {
         }
     }
 }
-
+```
