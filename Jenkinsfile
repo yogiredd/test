@@ -29,7 +29,6 @@ pipeline {
 
                 sh '''
                     podman build -t ${DOCKER_IMAGE}:${BUILD_NUMBER} .
-                '''
             }
         }
 
@@ -39,7 +38,7 @@ pipeline {
         echo 'Running Trivy Security Scan'
         echo '========================================'
 
-        sh '''
+        sh 
             IMAGE_TAR="/tmp/mynginx-${BUILD_NUMBER}.tar"
 
             echo "Saving Podman image..."
@@ -58,7 +57,7 @@ pipeline {
             echo "Removing temporary image archive..."
 
             rm -f "$IMAGE_TAR"
-        '''
+        
     }
 
         stage('Push Image') {
