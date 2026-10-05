@@ -1,8 +1,9 @@
+```groovy
 pipeline {
 
     agent any
 
-     triggers {
+    triggers {
         pollSCM('H/2 * * * *')
     }
 
@@ -29,6 +30,19 @@ pipeline {
 
                 sh '''
                     podman build -t ${DOCKER_IMAGE}:${BUILD_NUMBER} .
+                '''
+            }
+        }
+
+        stage('Trivy Security Scan') {
+            steps {
+                echo 'Running Trivy security scan...'
+
+                sh '''
+                    trivy image \
+                        --severity HIGH,CRITICAL \
+                        --exit-code 0 \
+                        ${DOCKER_IMAGE}:${BUILD_NUMBER}
                 '''
             }
         }
@@ -126,6 +140,7 @@ pipeline {
             echo "========================================"
             echo "Image: ${DOCKER_IMAGE}:${BUILD_NUMBER}"
             echo "Deployment: ${DEPLOYMENT}"
+            echo "Trivy: Security scan completed"
             echo "========================================"
         }
 
@@ -142,4 +157,4 @@ pipeline {
         }
     }
 }
-
+```
