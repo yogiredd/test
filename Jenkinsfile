@@ -34,17 +34,32 @@ pipeline {
         }
 
         stage('Trivy Security Scan') {
-            steps {
-                echo 'Running Trivy security scan...'
+    steps {
+        echo '========================================'
+        echo 'Running Trivy Security Scan'
+        echo '========================================'
 
-                sh '''
-                    trivy image \
-                        --severity HIGH,CRITICAL \
-                        --exit-code 0 \
-                        ${DOCKER_IMAGE}:${BUILD_NUMBER}
-                '''
-            }
-        }
+        sh '''
+            IMAGE_TAR="/tmp/mynginx-${BUILD_NUMBER}.tar"
+
+            echo "Saving Podman image..."
+
+            podman save \
+                ${DOCKER_IMAGE}:${BUILD_NUMBER} \
+                -o "$IMAGE_TAR"
+
+            echo "Scanning image with Trivy..."
+
+            trivy image \
+                --input "$IMAGE_TAR" \
+                --severity HIGH,CRITICAL \
+                --exit-code 0
+
+            echo "Removing temporary image archive..."
+
+            rm -f "$IMAGE_TAR"
+        '''
+    }
 
         stage('Push Image') {
             steps {
